@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"image"
 	"image/png"
 	"log"
@@ -9,11 +10,25 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/pborman/getopt/v2"
 )
 
-var logger = log.New(os.Stderr, "", 0)
+var (
+	logger      = log.New(os.Stderr, "", 0)
+	versionFlag = getopt.BoolLong("version", 'v', "print imgchop version")
+)
+
+var version = "[N/A]"
 
 func main() {
+	getopt.Parse()
+
+	if *versionFlag {
+		fmt.Println(version)
+		os.Exit(0)
+	}
+
 	if len(os.Args) < 2 {
 		logger.Println("No files were passed in!")
 		pause()

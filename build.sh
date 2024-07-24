@@ -1,0 +1,5 @@
+VERSION="v0.1.0"
+echo "Building linux executable"
+GOOS="linux" GOARCH="arm64" go build -ldflags "-X main.version=$VERSION" -o "build/imgchop"
+echo "Building windows executable"
+GOOS="windows" GOARCH="arm64" go build -ldflags "-X main.version=$VERSION" -o "build/imgchop.exe"
