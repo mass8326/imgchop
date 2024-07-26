@@ -13,55 +13,55 @@ import (
 	"github.com/mass8326/imgchop/lib/util"
 )
 
-func Process(wg *sync.WaitGroup, warning *bool, name string, intelligent bool) {
+func Process(wg *sync.WaitGroup, c chan logger.Message, name string, intelligent bool) {
 	defer wg.Done()
 
-	warn := func(msg string) {
-		logger.Logger.Printf("%s (%s)\n", msg, name)
-		*warning = true
+	lgr := logger.Logger{
+		Messages: c,
+		Source:   name,
 	}
 
 	fd, err := os.Open(name)
 	if err != nil {
-		warn("Unable to open path!")
+		lgr.Warn("Unable to open path!")
 		return
 	}
 	defer fd.Close()
 
 	stat, err := fd.Stat()
 	if err != nil {
-		warn("Unable to stat path!")
+		lgr.Warn("Unable to stat path!")
 		return
 	}
 
 	if stat.IsDir() {
 		entries, err := fd.ReadDir(0)
 		if err != nil {
-			warn("Unable to read directory!")
+			lgr.Warn("Unable to read directory!")
 			return
 		}
+		wg.Add(len(entries))
 		for _, entry := range entries {
-			wg.Add(1)
-			go Process(wg, warning, filepath.Join(name, entry.Name()), true)
+			go Process(wg, c, filepath.Join(name, entry.Name()), true)
 		}
 	} else {
 		wg.Add(1)
-		Crop(wg, warning, fd, intelligent)
+		Crop(wg, c, fd, intelligent)
 	}
 }
 
-func Crop(wg *sync.WaitGroup, warning *bool, fd *os.File, intelligent bool) {
+func Crop(wg *sync.WaitGroup, c chan logger.Message, fd *os.File, intelligent bool) {
 	defer wg.Done()
 
 	fname := fd.Name()
-	warn := func(msg string) {
-		logger.Logger.Printf("%s (%s)\n", msg, fname)
-		*warning = true
+	lgr := logger.Logger{
+		Messages: c,
+		Source:   fname,
 	}
 
 	input, _, err := image.Decode(fd)
 	if err != nil {
-		warn("Unable to decode image!")
+		lgr.Warn("Unable to decode image!")
 		return
 	}
 
@@ -71,7 +71,7 @@ func Crop(wg *sync.WaitGroup, warning *bool, fd *os.File, intelligent bool) {
 	}
 	croppable, ok := input.(Croppable)
 	if !ok {
-		warn("Image does not support cropping!")
+		lgr.Warn("Image does not support cropping!")
 		return
 	}
 
@@ -79,13 +79,13 @@ func Crop(wg *sync.WaitGroup, warning *bool, fd *os.File, intelligent bool) {
 	width, height := target.Dx(), target.Dy()
 	switch {
 	case width == height:
-		warn("Image is already a square!")
+		lgr.Warn("Image is already a square!")
 		return
 	case width&1 == 1:
-		warn("Image width is an odd number and the image cannot be cropped into a square!")
+		lgr.Warn("Image width is an odd number and the image cannot be cropped into a square!")
 		return
 	case height&1 == 1:
-		warn("Image height is an odd number and the image cannot be cropped into a square!")
+		lgr.Warn("Image height is an odd number and the image cannot be cropped into a square!")
 		return
 	}
 
@@ -110,7 +110,7 @@ func Crop(wg *sync.WaitGroup, warning *bool, fd *os.File, intelligent bool) {
 					minimum := min(r, g, b)
 					lum := float32(maximum-minimum) * 100 / 255 / 2
 					if lum > 20 {
-						warn(fmt.Sprintf("Image did not pass intelligent filter (%f%% pixel luminosity at [%d, %d])", lum, x, y))
+						lgr.Info(fmt.Sprintf("Image did not pass intelligent filter (%f%% pixel luminosity at [%d, %d])", lum, x, y))
 						return
 					}
 
@@ -121,7 +121,7 @@ func Crop(wg *sync.WaitGroup, warning *bool, fd *os.File, intelligent bool) {
 			avg := float32(maximums-minimums) / 2 / float32(bounds.Dx()) / float32(bounds.Dy())
 			lum := avg * 100 / 255
 			if lum > 1 {
-				warn(fmt.Sprintf("Image did not pass intelligent filter (%f%% average luminosity)", lum))
+				lgr.Info(fmt.Sprintf("Image did not pass intelligent filter (%f%% average luminosity)", lum))
 				return
 			}
 		}
@@ -140,7 +140,7 @@ func Crop(wg *sync.WaitGroup, warning *bool, fd *os.File, intelligent bool) {
 	basename := strings.TrimSuffix(filepath.Base(fname), filepath.Ext(fname))
 	err = writeImage(result, filepath.Join(dir, basename+"-imgchop.png"))
 	if err != nil {
-		warn("Could not save output image!")
+		lgr.Warn("Could not save output image!")
 	}
 }
 

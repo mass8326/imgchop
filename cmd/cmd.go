@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/fatih/color"
 	"github.com/mass8326/imgchop/lib/imgchop"
 	"github.com/mass8326/imgchop/lib/logger"
 	"github.com/spf13/cobra"
@@ -24,15 +25,31 @@ func Execute() {
 				logger.Exit(1)
 			}
 
-			warning := false
+			c := make(chan logger.Message, 1)
 			var wg sync.WaitGroup
+			wg.Add(len(args))
 			for _, file := range args {
-				wg.Add(1)
-				go imgchop.Process(&wg, &warning, file, *flags.intelligent)
+				go imgchop.Process(&wg, c, file, *flags.intelligent)
 			}
-			wg.Wait()
 
-			if warning {
+			messaged := false
+			go func() {
+				for msg := range c {
+					messaged = true
+					var level string
+					switch msg.Level {
+					case "warn":
+						level = color.New(color.FgYellow).Sprintf("[%s]", msg.Level)
+					case "info":
+						level = color.New(color.FgCyan).Sprintf("[%s]", msg.Level)
+					}
+					logger.RawLogger.Printf("%s %s", level, color.HiBlackString(msg.Source))
+					logger.RawLogger.Println(msg.Msg)
+				}
+			}()
+
+			wg.Wait()
+			if messaged {
 				logger.Exit(0)
 			}
 		},
