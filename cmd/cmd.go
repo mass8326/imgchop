@@ -11,7 +11,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var version = "[N/A]"
+// This should be defined at build time using ldflags
+var version = "0.0.0-invalid"
 
 func Execute() {
 	var flags RootFlags

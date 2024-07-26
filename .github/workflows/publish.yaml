@@ -42,10 +42,12 @@ jobs:
         run: |
           version=$(echo ${{ github.ref_name }} | cut -dv -f2)
           echo "version=$version" >> $GITHUB_OUTPUT
-      - run: go build -ldflags "-X main.version=${{ steps.version.outputs.version }}" -o "./build/${{ matrix.target.output }}"
+      - run: go build -ldflags "-X github.com/mass8326/imgchop/cmd.version=${{ steps.version.outputs.version }}" -o "./build/${{ matrix.target.output }}"
         env:
           GOOS: ${{ matrix.target.os }}
           GOARCH: ${{ matrix.target.arch }}
+      - if: matrix.target.os == 'linux'
+        run: "[[ $(./build/imgchop --version) == '${{ steps.version.outputs.version }}' ]]"
       - uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ github.token }}
