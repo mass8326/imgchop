@@ -9,8 +9,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/mass8326/imgchop/lib/logger"
-	"github.com/mass8326/imgchop/lib/util"
+	"github.com/mass8326/imgchop/internal/logger"
+	"github.com/mass8326/imgchop/internal/util"
 )
 
 func Process(wg *sync.WaitGroup, c chan logger.Message, name string, intelligent bool) {

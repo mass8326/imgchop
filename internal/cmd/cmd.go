@@ -6,8 +6,8 @@ import (
 	"sync"
 
 	"github.com/fatih/color"
-	"github.com/mass8326/imgchop/lib/imgchop"
-	"github.com/mass8326/imgchop/lib/logger"
+	"github.com/mass8326/imgchop/internal/imgchop"
+	"github.com/mass8326/imgchop/internal/logger"
 	"github.com/spf13/cobra"
 )
 

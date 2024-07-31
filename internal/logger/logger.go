@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/mass8326/imgchop/lib/util"
+	"github.com/mass8326/imgchop/internal/util"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )
